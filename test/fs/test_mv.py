@@ -24,7 +24,7 @@ class TestMv:
         assert len(filesystem) == 4
 
         captured = capsys.readouterr()
-        assert captured.out == "test_dir\ntest1\ntest2\n"
+        assert captured.out == "/test_dir\ntest1\ntest2\n"
 
     def test_non_existant_directories(self, capsys):
         bad_directory = "test2"

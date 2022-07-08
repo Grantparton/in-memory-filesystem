@@ -131,10 +131,11 @@ class FileSystem:
         for path in paths:
             node = self.__find_node(path)
             for item in node.children.keys():
+                item_node = self.inode_index.get(item, None)
                 cwd_scoped_item = item.split("/")[-1]
                 if (match and cwd_scoped_item == match) or not match:
-                    if cwd_scoped_item not in [".", ".."]:
-                        print(cwd_scoped_item)
+                    if item_node:
+                        print(f"{'/' if item_node.is_directory else ''}{cwd_scoped_item}")
 
     def touch(self, inputs: List[str]) -> None:
         """
@@ -295,7 +296,7 @@ class FileSystem:
         :param command: A string indicating a command and its arguments.
         :return: 1 when the `exit` command is issued.
         """
-        split_input = command.split(" ")
+        split_input = command.split()
         if split_input[0] == "ls":
             self.ls(split_input[1:])
         elif split_input[0] == "find":
