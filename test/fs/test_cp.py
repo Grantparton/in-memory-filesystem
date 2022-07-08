@@ -1,9 +1,6 @@
 from fs import fs
 
 
-# TODO: Add assertions for stdout when exceptions are thrown
-
-
 class TestCp:
     def test_improper_args(self, capsys):
         fs.FileSystem(commands=["cp"]).initialize()

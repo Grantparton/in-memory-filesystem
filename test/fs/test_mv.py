@@ -1,9 +1,6 @@
 from fs import fs
 
 
-# TODO: Add assertions for stdout when exceptions are thrown
-
-
 class TestMv:
     def test_improper_args(self, capsys):
         fs.FileSystem(commands=["mv"]).initialize()

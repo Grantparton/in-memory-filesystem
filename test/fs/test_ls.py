@@ -1,9 +1,6 @@
 from fs import fs
 
 
-# TODO: Add assertions for stdout when exceptions are thrown
-
-
 class TestLs:
     def test_no_args(self, capsys):
         fs.FileSystem(commands=["touch test1 test2", "ls"]).initialize()
