@@ -14,12 +14,16 @@ class TestCd:
         assert captured.out == f"Path {bad_directory} does not exist.\n"
 
     def test_multiple_args(self, capsys):
-        fs.FileSystem(commands=["mkdir test1 test2", "cd test1 test2"]).initialize()
+        fs.FileSystem(
+            commands=["mkdir test1 test2", "cd test1 test2"]
+        ).initialize()
         captured = capsys.readouterr()
         assert captured.out == f"Usage: cd target\n"
 
     def test_cd_into_directory(self, capsys):
-        fs.FileSystem(commands=["mkdir test1", "cd test1", "cd ..", "pwd"]).initialize()
+        fs.FileSystem(
+            commands=["mkdir test1", "cd test1", "cd ..", "pwd"]
+        ).initialize()
         captured = capsys.readouterr()
         assert captured.out == "/\n"
 

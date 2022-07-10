@@ -2,6 +2,11 @@ from typing import List, Dict
 from . import exceptions
 
 
+class Link:
+    def __init__(self, symbolic: bool = False):
+        self.symbolic = symbolic
+
+
 class INode:
     """
     Class the represents an inode object in our filesystem, similar to how the
@@ -10,12 +15,19 @@ class INode:
     """
 
     def __init__(
-        self, path: str = None, is_directory: bool = False, parent: str = None
+        self,
+        path: str = None,
+        is_directory: bool = False,
+        parent: str = None,
+        link: str = False,
     ):
         self.is_directory = is_directory
         self.children = {".": path, "..": parent}
         self.parent = parent
         self.path = path
+        self.link = link
+        self.hardlinks = dict()
+        self.reference_count = 1
 
 
 class FileSystem:
@@ -32,12 +44,14 @@ class FileSystem:
         # TODO: Allow files and directories to share names
         # We could make the index a tuple of both the path and the type of
         # the node such that file and directories can share a namespace.
-        root_inode = INode(path="", is_directory=True,
-                           parent=self.current_location)
+        root_inode = INode(
+            path="", is_directory=True, parent=self.current_location
+        )
         self.inode_index = {self.current_location: root_inode}
 
-    def __create_new_inode(self,
-                           name: str, parent: str, is_directory: bool) -> None:
+    def __create_new_inode(
+        self, name: str, parent: str, is_directory: bool
+    ) -> None:
         """
         This is used by all methods that create new inode entries in our
         filesystem. We must supply the name of the base item, the path to the
@@ -64,8 +78,9 @@ class FileSystem:
                 f"Filesystem item with name {new_node_path} already exists."
             )
 
-    def __create_new_inodes(self, inputs: List[str],
-                            directories: bool = False) -> None:
+    def __create_new_inodes(
+        self, inputs: List[str], directories: bool = False
+    ) -> None:
         """
         Helper function used to kick off the inode creation process. We wrap the
         inner-most __create_new_inode with this function to filter out special
@@ -80,8 +95,9 @@ class FileSystem:
                     "Cannot create files with reserved names . or .."
                 )
             parent_node = self.__find_node(item, parent=True)
-            self.__create_new_inode(item.split("/")[-1], parent_node.path,
-                                    directories)
+            self.__create_new_inode(
+                item.split("/")[-1], parent_node.path, directories
+            )
 
     def __find_node(self, path: str, parent: bool = False) -> INode:
         """
@@ -112,7 +128,9 @@ class FileSystem:
                 current_path = current_path + "/" + item
                 node = self.inode_index.get(current_path, None)
                 if not node:
-                    raise exceptions.PathException(f"Path {path} does not exist.")
+                    raise exceptions.PathException(
+                        f"Path {path} does not exist."
+                    )
         return node
 
     def ls(self, paths: List[str], match: str = "") -> None:
@@ -135,7 +153,9 @@ class FileSystem:
                 cwd_scoped_item = item.split("/")[-1]
                 if (match and cwd_scoped_item == match) or not match:
                     if item_node:
-                        print(f"{'/' if item_node.is_directory else ''}{cwd_scoped_item}")
+                        print(
+                            f"{'/' if item_node.is_directory else ''}{cwd_scoped_item}"
+                        )
 
     def touch(self, inputs: List[str]) -> None:
         """
@@ -187,7 +207,11 @@ class FileSystem:
                 ) or not node.is_directory:
                     del parent_node.children[node_path]
                     self.inode_index[parent_node.path] = parent_node
-                    del self.inode_index[node_path]
+                    node.reference_count -= 1
+                    if node.reference_count <= 0:
+                        del self.inode_index[node_path]
+                    else:
+                        self.inode_index[node_path] = node
                 else:
                     raise exceptions.DirectoryNonEmpty(
                         f"Directory {node_path} isn't empty."
@@ -223,18 +247,27 @@ class FileSystem:
                 for source in sources:
                     try:
                         source_node = self.__find_node(source)
-                        new_path = target_node.path + "/" + source.split("/")[0]
+                        new_path = f"{target_node.path}/{source.split('/')[-1]}"
                         # TODO: Implement directory copy
                         if not source_node.is_directory:
-                            copied_node = INode(path=new_path,
-                                                parent=target_node.path)
+                            copied_node = INode(
+                                path=new_path, parent=target_node.path
+                            )
                             target_node.children[new_path] = copied_node
                             self.inode_index[new_path] = copied_node
+
+                            # Propagate this change to all hardlinks
+                            for link_path in source_node.hardlinks:
+                                link_node = self.inode_index[link_path]
+                                link_node.link = new_path
+                                self.inode_index[link_path] = link_node
                             if move:
                                 parent_node_of_source = self.inode_index[
                                     source_node.parent
                                 ]
-                                del parent_node_of_source.children[source_node.path]
+                                del parent_node_of_source.children[
+                                    source_node.path
+                                ]
                                 del self.inode_index[source_node.path]
                         else:
                             raise exceptions.ImproperArguments(
@@ -246,9 +279,13 @@ class FileSystem:
                         continue
                 self.inode_index[target_node.path] = target_node
             else:
-                raise exceptions.ImproperArguments("Cannot move items to a file.")
+                raise exceptions.ImproperArguments(
+                    "Cannot move items to a file."
+                )
         else:
-            raise exceptions.ImproperArguments(f"Usage: {action} source ... target")
+            raise exceptions.ImproperArguments(
+                f"Usage: {action} source ... target"
+            )
 
     def find(self, names: List[str]) -> None:
         """
@@ -261,7 +298,7 @@ class FileSystem:
         """
         if names:
             for name in names:
-                self.ls(self.current_location, match=name)
+                self.ls([self.current_location], match=name)
         else:
             raise exceptions.ImproperArguments(f"Usage: find target")
 
@@ -278,7 +315,7 @@ class FileSystem:
         else:
             raise exceptions.ImproperArguments("Usage: cd target")
 
-    def pwd(self, inputs) -> None:
+    def pwd(self, inputs: List[str]) -> None:
         """
         Print the current working directory. Essentially a getter for the
         FileSystem `current_location` attribute.
@@ -288,6 +325,34 @@ class FileSystem:
         if inputs:
             raise exceptions.ImproperArguments("pwd: too many arguments")
         print(self.current_location + "/")
+
+    def link(self, inputs, hard=False) -> None:
+        """
+        Create a pointer to a file/directory via a link. A default call to this
+        method will create a symlink: a link which will break if the original
+        item moves. If `hard` is True, we create a hardlink instead, which
+        won't.
+        :param inputs: A two element list of strings, where the first element
+        is a source file/directory and the second is the name of the link.
+        :param hard: True if creating a hard link.
+        :return: None
+        """
+        if inputs and len(inputs) == 2:
+            source_node = self.__find_node(inputs[0])
+            link_parent = self.__find_node(inputs[1], parent=True)
+            link_path = link_parent.path + "/" + inputs[1].split("/")[-1]
+            link = INode(
+                path=link_path, parent=link_parent.path, link=source_node.path
+            )
+            if hard:
+                source_node.reference_count += 1
+                source_node.hardlinks[link_path] = link
+                self.inode_index[source_node.path] = source_node
+            self.inode_index[link.path] = link
+        else:
+            raise exceptions.ImproperArguments(
+                f"Usage: {'hard' if hard else 'sym'}link [source_item] [link_name]"
+            )
 
     def exec(self, command: str) -> int:
         """
@@ -315,6 +380,10 @@ class FileSystem:
             self.cp(split_input[1:])
         elif split_input[0] == "mv":
             self.mv(split_input[1:])
+        elif split_input[0] == "symlink":
+            self.link(split_input[1:])
+        elif split_input[0] == "hardlink":
+            self.link(split_input[1:], hard=True)
         elif split_input[0] == "exit":
             return 1
         else:
@@ -341,7 +410,7 @@ class FileSystem:
                 ) as e:
                     print(e)
         elif self.interactive:
-            print('Use the command `exit` to terminate the program.')
+            print("Use the command `exit` to terminate the program.")
             while True:
                 command = input(f"{self.current_location} > ")
                 try:

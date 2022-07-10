@@ -10,7 +10,11 @@ class TestRm:
 
     def test_multiple_args(self):
         filesystem = fs.FileSystem(
-            commands=["mkdir test1", "touch test1/test2", "rm test1/test2 test1"]
+            commands=[
+                "mkdir test1",
+                "touch test1/test2",
+                "rm test1/test2 test1",
+            ]
         ).initialize()
         assert len(filesystem) == 1
 

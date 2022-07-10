@@ -34,7 +34,9 @@ class TestMv:
 
     def test_non_existant_files(self, capsys):
         bad_file = "test1"
-        fs.FileSystem(commands=["mkdir test2", f"mv {bad_file} test2"]).initialize()
+        fs.FileSystem(
+            commands=["mkdir test2", f"mv {bad_file} test2"]
+        ).initialize()
 
         captured = capsys.readouterr()
         assert captured.out == f"Path {bad_file} does not exist.\n"

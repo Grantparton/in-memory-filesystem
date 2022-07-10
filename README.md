@@ -112,8 +112,8 @@ and adjust their paths accordingly. This is something I'd want to dig deeper
 on if I had more time to work on the project.
 
 ## Extensions
-I chose to tackle two extensions: move/copy and operations on paths. The latter
-of the two was more interesting given my design structure because I had to
+I chose to tackle three extensions: move/copy, operations on paths, and
+linking. The latter two were more interesting given my design structure because I had to
 introduce a helper function to navigate the tree with special directories in
 place (. and ..) which at its core was a translator between any type of path
 and an absolute path. The inode index table design would consistently have
@@ -123,21 +123,16 @@ I would also like to address the scoping of the other extensions and how my
 design might interact with them. Walking a subtree with some kind of function
 would be relatively easy to implement because of how lightweight it is to
 navigate the inode index, making a utility like `tree` pretty interesting to
-implement recursively. Adding sym/hardlinks would be a harder one because of the
-same reasons that copying directories is hard: dealing with a shifting table
-as a whole is an involved process. But one thing I would definitely look
-towards is adding a reference count to each node & only garbage collecting that
-node once the reference count is zero, which would be incremented on link
-creation.
-
-Adding permissions & groups also sounds simple to implement but would require
+implement recursively. Adding permissions & groups also sounds simple to implement but would require
 thought that is relatively unrelated to the file system itself: we could create
 new classes for both users and groups which implement permissions as umasks, 
 once again similar to how Unix handles this. From there, we could just 
 instantiate one of these upon file system creation and add new commands for:
 switching users, creating users, creating groups, adding users to groups. I
 didn't want to work on this extension because it had less to do directly with
-the file system itself. The last extension was streaming file contents: I think
+the file system itself. 
+
+The last extension was streaming file contents: I think
 a deep dive on this would itself be an entire project depending on how far down
 the rabbit hole you go. It would be interesting to start implementing
 a virtual hard disk with garbage collection and memory allocation, as well as

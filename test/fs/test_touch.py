@@ -29,3 +29,10 @@ class TestTouch:
         root_node = filesystem[""]
         assert test1_node.parent == ""
         assert "/test1" in root_node.children
+
+    def test_with_special_directories(self):
+        filesystem = fs.FileSystem(
+            commands=["mkdir test1", "touch test1/test2"]
+        ).initialize()
+        test1_node = filesystem["/test1"]
+        assert "/test1/test2" in test1_node.children

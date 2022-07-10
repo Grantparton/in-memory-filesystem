@@ -17,7 +17,12 @@ class TestMkdir:
         test2_node = filesystem["/test2"]
         test3_node = filesystem["/test2/test3"]
         root_node = filesystem[""]
-        assert list(filesystem.keys()) == ["", "/test1", "/test2", "/test2/test3"]
+        assert list(filesystem.keys()) == [
+            "",
+            "/test1",
+            "/test2",
+            "/test2/test3",
+        ]
         assert test1_node.parent == ""
         assert test2_node.parent == ""
         assert test3_node.parent == "/test2"

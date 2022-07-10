@@ -9,7 +9,7 @@ def main(args=None):
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument("--interactive", action="store_true")
-    parser.add_argument("--commands", nargs='+')
+    parser.add_argument("--commands", nargs="+")
     args = parser.parse_args(args)
 
     try:
