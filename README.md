@@ -79,6 +79,14 @@ The filesystem supports the following commands:
 * touch
   * Usage: `touch <source> ...`
   * Create files in the filesystem.
+* hardlink
+  * Usage: `hardlink <source> <link name>`
+  * Create a hard link between a source and a link. This link will
+    follow the source node even if it moves.
+* symlink
+  * Usage: `symlink <source> <link name>`
+  * Create a symbolic link between a source and a link. This link will break
+    if the source object moves by design.
 
 ## Implementation
 This implementation is essentially a running index of each node in the system.

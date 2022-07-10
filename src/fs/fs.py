@@ -341,6 +341,8 @@ class FileSystem:
             source_node = self.__find_node(inputs[0])
             link_parent = self.__find_node(inputs[1], parent=True)
             link_path = link_parent.path + "/" + inputs[1].split("/")[-1]
+            # TODO: Implement symlink with a smaller memory footprint, since
+            # they are only a reference to the source node's path on creation.
             link = INode(
                 path=link_path, parent=link_parent.path, link=source_node.path
             )
