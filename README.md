@@ -34,6 +34,7 @@ command from the root of the repository:
 ```shell
 pytest test -v
 ```
+There are currently 51 unit tests in the complete test suite.
 
 ## Usage
 You can execute the package in two different ways: an interactive mode, or a
@@ -130,7 +131,19 @@ absolute path adjusted, one must iterate through all descendants of that node
 and adjust their paths accordingly. This is something I'd want to dig deeper 
 on if I had more time to work on the project.
 
-One particular area of implementation I'd like to discuss is how 
+One particular area of implementation I'd like to discuss is how I chose to
+approach issue of virtual hard disk space in my implementation. I chose to
+implement it as a fixed size array where each slot in the array holds a single
+byte from a byte array pulled apart from the serialized data. I took a naive
+approach here where the next slot is determined by an ever-incrementing
+hard disk index, only moving forward and never rewinding. This is the biggest
+flaw in my approach, but I'm happy with it for my purposes as my only reason
+to implement read/write in the first place was to properly unit test my hardlink
+implementation. This is also why the read/write method is very rudimentary:
+if I had more time I'd ideally add ways to write to a file other than command
+line supplied strings. Writing this extension could be an entire take home
+interview question in itself, but my way gets the job done with basic
+functionality which is a prototype of what the UFS actually implements as well.
 
 ## Extensions
 I chose to tackle four extensions: move/copy, file contents, operations on paths, and
