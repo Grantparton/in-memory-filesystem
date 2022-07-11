@@ -358,7 +358,10 @@ class FileSystem:
         """
         if len(inputs) == 2:
             node = self.__find_node(inputs[0])
-            if not node.children and not node.link:
+            if node.link:
+                # When writing to a link, write to the source instead.
+                node = self.__find_node(node.link)
+            if not node.is_directory:
                 data = pickle.dumps(inputs[1])
                 data_size = getsizeof(data)
                 start = self.hard_disk_index
@@ -373,7 +376,7 @@ class FileSystem:
                 self.inode_index[node.path] = node
             else:
                 raise exceptions.ImproperArguments(
-                    "Writing only supported on files"
+                    "Writing not supported on directories"
                 )
         else:
             raise exceptions.ImproperArguments(
@@ -389,6 +392,9 @@ class FileSystem:
         """
         if len(inputs) == 1:
             node = self.__find_node(inputs[0])
+            if node.link:
+                # When reading a link, read the source instead.
+                node = self.__find_node(node.link)
             deserialized_data = ""
             if node.data:
                 for data_tuple in node.data:

@@ -34,7 +34,7 @@ class TestReadWrite:
         ).initialize()
 
         captured = capsys.readouterr()
-        assert captured.out == "Writing only supported on files\n"
+        assert captured.out == "Writing not supported on directories\n"
 
     def test_standard_workflow(self, capsys):
         file_contents = "'testing'"
