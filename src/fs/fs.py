@@ -1,12 +1,8 @@
-from typing import List, Dict
-from sys import getsizeof
 import pickle
+from sys import getsizeof
+from typing import Dict, List
+
 from . import exceptions
-
-
-class Link:
-    def __init__(self, symbolic: bool = False):
-        self.symbolic = symbolic
 
 
 class INode:
@@ -18,22 +14,22 @@ class INode:
 
     def __init__(
         self,
-        path: str = None,
+        path: str = "",
         is_directory: bool = False,
-        parent: str = None,
-        link: str = None,
+        parent: str = "",
+        link: str = "",
     ):
         self.is_directory = is_directory
-        self.children = {".": path, "..": parent} if is_directory else None
+        self.children = {".": path, "..": parent} if is_directory else dict()
         self.parent = parent
         self.path = path
         self.link = link
-        self.hardlinks = dict()
+        self.hardlinks: Dict[str, INode] = dict()
         self.reference_count = 1
         # Data here is represented as a list of two element tuples, where each
         # element represents a start & stop index of a particular block of
         # data in the allocated hard disk block.
-        self.data = []
+        self.data: List[tuple] = []
 
 
 class FileSystem:
@@ -474,6 +470,7 @@ class FileSystem:
             return 1
         else:
             print(f"Unrecognized command: {split_input[0]}")
+        return 0
 
     def initialize(self) -> Dict[str, INode]:
         """

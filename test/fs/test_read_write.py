@@ -1,5 +1,6 @@
-from fs import fs
 import pickle
+
+from fs import fs
 
 
 class TestReadWrite:
