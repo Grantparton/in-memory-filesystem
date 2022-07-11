@@ -17,7 +17,11 @@ class TestReadWrite:
         fs.FileSystem(commands=["write"]).initialize()
 
         captured = capsys.readouterr()
-        assert captured.out == "Usage: write <file> '<a_string>'\n"
+        assert (
+            captured.out
+            == "Usage: write <file> '<a_string>'\nAlso, please refain from "
+            "using spaces in the string :^)\n"
+        )
 
     def test_write_past_capacity(self, capsys):
         fs.FileSystem(

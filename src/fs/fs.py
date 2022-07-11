@@ -380,7 +380,8 @@ class FileSystem:
                 )
         else:
             raise exceptions.ImproperArguments(
-                "Usage: write <file> '<a_string>'"
+                "Usage: write <file> '<a_string>'\nAlso, please refain from "
+                "using spaces in the string :^)"
             )
 
     def read(self, inputs: List[str]) -> None:

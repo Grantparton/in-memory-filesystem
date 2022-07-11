@@ -54,9 +54,20 @@ a_file!
 %
 ```
 
+There is also a flag which can be passed to control how big the virtual hard
+disk is. Use the flag `--hard-disk-capacity` to do so: note that the value is in
+bytes.
+```shell
+% fs --interactive --hard-disk-capacity 1
+> touch a_file
+> write a_file 'a_long_string'
+Out of virtual disk space.
+```
+
 Note that you can always run `fs -h` to understand the different startup
 options.
 
+### Available Commands
 The commands used to navigate are similar to those use in the Unix File System.
 An important thing to note is that all of these commands support the special
 `.` and `..` items in any given path.
