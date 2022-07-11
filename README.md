@@ -10,6 +10,7 @@ using nodes to represent each directory/file in the file system.
 * Move & copy
 * Symlinks
 * Hardlinks
+* File reading & writing
 * Basic filesystem utilities
 
 ## Installation
@@ -110,6 +111,12 @@ The filesystem supports the following commands:
   * Usage: `symlink <source> <link name>`
   * Create a symbolic link between a source and a link. This link will break
     if the source object moves by design.
+* write
+  * Usage: `write <file_name> '<some contents>'`
+  * Write some data to a file. Currently limited to a command line string.
+* read
+  * Usage: `read <file_name>`
+  * Read some data that might've been written to a file
 
 ## Implementation
 This implementation is essentially a running index of each node in the system.
