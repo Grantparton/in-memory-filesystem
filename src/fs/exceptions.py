@@ -21,3 +21,10 @@ class DirectoryNonEmpty(Exception):
     """
     Exception thrown when trying to remove a directory that isn't empty.
     """
+
+
+class OutOfDisk(Exception):
+    """
+    Exception thrown when trying to write to a file but the virtual disk is
+    full.
+    """

@@ -1,8 +1,16 @@
 
 # In-Memory Filesystem
+## Introduction
 This is an implementation of an in memory file system. This implementation is
 based on Unix's file system implementation in how we represent the system itself
 using nodes to represent each directory/file in the file system.
+
+## Features
+* Path operations using special directories (`.` and `..`)
+* Move & copy
+* Symlinks
+* Hardlinks
+* Basic filesystem utilities
 
 ## Installation
 It is recommended that this program be installed in a virtual environment. To 
@@ -44,6 +52,9 @@ less user-friendly, but still accessible via the command line.
 a_file!
 %
 ```
+
+Note that you can always run `fs -h` to understand the different startup
+options.
 
 The commands used to navigate are similar to those use in the Unix File System.
 An important thing to note is that all of these commands support the special
@@ -119,8 +130,10 @@ absolute path adjusted, one must iterate through all descendants of that node
 and adjust their paths accordingly. This is something I'd want to dig deeper 
 on if I had more time to work on the project.
 
+One particular area of implementation I'd like to discuss is how 
+
 ## Extensions
-I chose to tackle three extensions: move/copy, operations on paths, and
+I chose to tackle four extensions: move/copy, file contents, operations on paths, and
 linking. The latter two were more interesting given my design structure because I had to
 introduce a helper function to navigate the tree with special directories in
 place (. and ..) which at its core was a translator between any type of path
@@ -139,11 +152,3 @@ instantiate one of these upon file system creation and add new commands for:
 switching users, creating users, creating groups, adding users to groups. I
 didn't want to work on this extension because it had less to do directly with
 the file system itself. 
-
-The last extension was streaming file contents: I think
-a deep dive on this would itself be an entire project depending on how far down
-the rabbit hole you go. It would be interesting to start implementing
-a virtual hard disk with garbage collection and memory allocation, as well as
-an idea of memory locking. I ultimately chose to implement path operations and
-move/copy because they had the most seamless transition with the existing work
-I was going to build a base system.

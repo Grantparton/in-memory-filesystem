@@ -1,4 +1,6 @@
 from typing import List, Dict
+from sys import getsizeof
+import pickle
 from . import exceptions
 
 
@@ -19,24 +21,35 @@ class INode:
         path: str = None,
         is_directory: bool = False,
         parent: str = None,
-        link: str = False,
+        link: str = None,
     ):
         self.is_directory = is_directory
-        self.children = {".": path, "..": parent}
+        self.children = {".": path, "..": parent} if is_directory else None
         self.parent = parent
         self.path = path
         self.link = link
         self.hardlinks = dict()
         self.reference_count = 1
+        # Data here is represented as a list of two element tuples, where each
+        # element represents a start & stop index of a particular block of
+        # data in the allocated hard disk block.
+        self.data = []
 
 
 class FileSystem:
-    def __init__(self, interactive: bool = False, commands: List[str] = None):
+    def __init__(
+        self,
+        interactive: bool = False,
+        commands: List[str] = None,
+        hard_disk_capacity: int = 1000,
+    ):
         """
         Initialize an empty filesystem.
         :param interactive: If True, consume commands from user input instead.
         :param commands: If passed, rely on a list of strings of commands
             instead.
+        :param hard_disk_capacity: An integer denoting the capacity of the
+        virtual hard disk, in bytes.
         """
         self.interactive = interactive
         self.current_location = ""
@@ -48,6 +61,8 @@ class FileSystem:
             path="", is_directory=True, parent=self.current_location
         )
         self.inode_index = {self.current_location: root_inode}
+        self.hard_disk = [None] * int(hard_disk_capacity)
+        self.hard_disk_index = 0
 
     def __create_new_inode(
         self, name: str, parent: str, is_directory: bool
@@ -209,6 +224,14 @@ class FileSystem:
                     self.inode_index[parent_node.path] = parent_node
                     node.reference_count -= 1
                     if node.reference_count <= 0:
+                        # Clean up any data that the file created
+                        if node.data:
+                            for data_tuple in node.data:
+                                for index in range(
+                                    data_tuple[0], data_tuple[1]
+                                ):
+                                    self.hard_disk[index] = None
+                        # TODO: Reclaim vacant space in hard disk
                         del self.inode_index[node_path]
                     else:
                         self.inode_index[node_path] = node
@@ -326,6 +349,56 @@ class FileSystem:
             raise exceptions.ImproperArguments("pwd: too many arguments")
         print(self.current_location + "/")
 
+    def write(self, inputs: List[str]) -> None:
+        """
+        Write some data to a file.
+        :param inputs: A two element list where the first is a path to a file
+            and the second is a string of some data to write to the file.
+        :return: None
+        """
+        if len(inputs) == 2:
+            node = self.__find_node(inputs[0])
+            if not node.children and not node.link:
+                data = pickle.dumps(inputs[1])
+                data_size = getsizeof(data)
+                start = self.hard_disk_index
+                byte_array = list(data)
+                if self.hard_disk_index + data_size < len(self.hard_disk):
+                    for count, value in enumerate(byte_array):
+                        self.hard_disk[self.hard_disk_index + count] = value
+                    self.hard_disk_index += len(byte_array)
+                else:
+                    raise exceptions.OutOfDisk("Out of virtual disk space.")
+                node.data.append((start, len(byte_array) + start))
+                self.inode_index[node.path] = node
+            else:
+                raise exceptions.ImproperArguments(
+                    "Writing only supported on files"
+                )
+        else:
+            raise exceptions.ImproperArguments(
+                "Usage: write <file> '<a_string>'"
+            )
+
+    def read(self, inputs: List[str]) -> None:
+        """
+        Read some data from a file.
+        :param inputs: A single element list containing a path of the file to
+        read.
+        :return: None
+        """
+        if len(inputs) == 1:
+            node = self.__find_node(inputs[0])
+            deserialized_data = ""
+            if node.data:
+                for data_tuple in node.data:
+                    deserialized_data += pickle.loads(
+                        bytes(self.hard_disk[data_tuple[0] : data_tuple[1]])
+                    )
+            print(deserialized_data)
+        else:
+            raise exceptions.ImproperArguments("Usage: read <file>")
+
     def link(self, inputs, hard=False) -> None:
         """
         Create a pointer to a file/directory via a link. A default call to this
@@ -384,6 +457,10 @@ class FileSystem:
             self.mv(split_input[1:])
         elif split_input[0] == "symlink":
             self.link(split_input[1:])
+        elif split_input[0] == "write":
+            self.write(split_input[1:])
+        elif split_input[0] == "read":
+            self.read(split_input[1:])
         elif split_input[0] == "hardlink":
             self.link(split_input[1:], hard=True)
         elif split_input[0] == "exit":
@@ -409,6 +486,7 @@ class FileSystem:
                     exceptions.PathException,
                     exceptions.NodeAlreadyExists,
                     exceptions.DirectoryNonEmpty,
+                    exceptions.OutOfDisk,
                 ) as e:
                     print(e)
         elif self.interactive:
@@ -423,6 +501,7 @@ class FileSystem:
                     exceptions.PathException,
                     exceptions.NodeAlreadyExists,
                     exceptions.DirectoryNonEmpty,
+                    exceptions.OutOfDisk,
                 ) as e:
                     print(e)
         else:
